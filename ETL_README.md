@@ -9,7 +9,7 @@ PoC project is for deploying an ETL pipeline using Airflow for processing data f
 
 Entire solution has been containarized using dockers, docker-compose for spinning up containers, defining dependencies and enabling the Airflow cluster and dependencies for running ETL pipeline. 
 
-```sh build.sh``` command will created images for development environment. Once images are build locally, ```docker-compose.yml``` will launch development environments, defining dependencies as separate containers. Airflow DAG is defined at path ```./mnt/airflow/dags/dataengineering_pipeline.py``` which initially checks for the respective files at the input folder using FileSensor operator and once files are available it proceeds further triggering the task for a Spark-submit job deploying an application to be executed in the spark-cluster. 
+```sh build.sh``` command will created images for development environment. Once images are build locally, ```docker-compose.yml``` will launch development environments, defining dependencies as separate containers. Airflow DAG `etl_dataprocessing_job ` is defined at path ```./mnt/airflow/dags/dataengineering_pipeline.py``` which initially waits for the respective files to be available at the input folder using FileSensor operator and once available it proceeds further triggering the task for Spark-submit job deploying application to be executed in spark-cluster. 
 
 Above ETL pipeline can be processed using a PythonOperator but then considering the job needs to be scalable and flexible to process increasing volume of input source files, decided to use spark task for the data processing. For the sake of PoC input files are being read from local filepath, but pyspark job is enabled with required jars for working with S3/ Hadoop filesystems and output file generated would be put into `./output` folder. 
 
@@ -33,7 +33,7 @@ _facing some issues to deploy the spark application to cluster using Airflow Spa
  ``` 
   Above command would build the respective images for `airflow`, `celery-workers`, `spark master`, `worker nodes` based on base images. 
 
-  Once images build locally, launch containers using `docker-compose.yml` for launching the environments. 
+  Once images available locally, launch containers using `docker-compose.yml` for the development environment. 
 
  ``` 
     docker-compose up -d
@@ -57,7 +57,7 @@ Once containers are up application UIs can be accessed as below from host machin
   - Flower dashboard for celery workers can be accessed at - http://localhost:5555/
   - Spark cluster UI can be accessed at - http://localhost:8080/
 
-Once in Airflow UI, kindly add below file connections navigating to ```Admin --> Connections ```, as these file path connections are required in DAG for Filesensor tasks. 
+Once in Airflow UI, add below file connections navigating to ```Admin --> Connections ```, as these file path connections are required in DAG for Filesensor tasks. 
  ```
     -  Conn Id    = file_path_source1
        Conn Type  = File
@@ -68,9 +68,9 @@ Once in Airflow UI, kindly add below file connections navigating to ```Admin -->
        Extra      = {"path":"/usr/local/airflow/data/input_source_2"}
  ```              
 
-After adding above connections, you can trigger from UI the ```DAG: etl_dataprocessing_job ```. DAG is scheduled to run everyday at 1am and the filesensor task for input data.json file waits for two hours as its expected to arrive before 3am and filesensor tas for engagement.csv file would timesout after 4 hours, which expects file to arrive before 5am, poking file at path for every 30 sec. Once both files are available, DAG proceeds further triggering pyspark script (./mnt/scripts/etl_process.py) for processing on spark cluster master ```spark://spark-master:7077```. 
+After adding above connections, you can trigger  the ```DAG: etl_dataprocessing_job ``` from Airflow UI. DAG is scheduled to run everyday at 1am and the filesensor task for input data.json file waits for two hours as its expected to arrive before 3am and filesensor task for engagement.csv file would timesout after 4 hours, which expects file to arrive before 5am, poking file at path for every 30 sec. Once both files are available, DAG proceeds further triggering pyspark script (./mnt/scripts/etl_process.py) for processing on spark cluster master ```spark://spark-master:7077```. 
 
-On successfull completion of etl pipeline this DAG generated output file for corresponding execution dates at output path - ```/usr/local/airflow/data/output ``` in .csv format. 
+On successful completion of etl pipeline DAG generats an output file for corresponding execution dates at output path - ```/usr/local/airflow/data/output ``` in .csv format mounted on local machine at - `./data/output/`.
 
 
 
