@@ -70,7 +70,7 @@ Once in Airflow UI, add below file connections navigating to ```Admin --> Connec
 
 After adding above connections, you can trigger  the ```DAG: etl_dataprocessing_job ``` from Airflow UI. DAG is scheduled to run everyday at 1am and the filesensor task for input data.json file waits for two hours as its expected to arrive before 3am and filesensor task for engagement.csv file would timesout after 4 hours, which expects file to arrive before 5am, poking file at path for every 30 sec. Once both files are available, DAG proceeds further triggering pyspark script (./mnt/scripts/etl_process.py) for processing on spark cluster master ```spark://spark-master:7077```. 
 
-On successful completion of etl pipeline DAG generats an output file for corresponding execution dates at output path - ```/usr/local/airflow/data/output ``` in .csv format mounted on local machine at - `./data/output/`.
+On successful completion of etl pipeline DAG generates an output file for corresponding execution dates at output path - ```/usr/local/airflow/data/output ``` in .csv format mounted on local machine at - `./data/output/`.
 
 
 
