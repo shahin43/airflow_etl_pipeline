@@ -11,7 +11,7 @@ Entire solution has been containarized using dockers, docker-compose for spinnin
 
 ```sh build.sh``` command will created images for development environment. Once images are build locally, ```docker-compose.yml``` will launch development environments, defining dependencies as separate containers. Airflow DAG is defined at path ```./mnt/airflow/dags/dataengineering_pipeline.py``` which initially checks for the respective files at the input folder using FileSensor operator and once files are available it proceeds further triggering the task for a Spark-submit job deploying an application to be executed in the spark-cluster. 
 
-Above etl pipeline can be processed using a PythonOperator but then considering the jobs needs to be scalable, flexible to process increasing volume of input source files, it was decided to use pyspark script for the data processing. For the sake of PoC input files are being read from local filepath, but pyspark job is enabled with required jars for working with S3/ Hadoop filesystems. 
+Above ETL pipeline can be processed using a PythonOperator but then considering the job needs to be scalable and flexible to process increasing volume of input source files, decided to use spark task for the data processing. For the sake of PoC input files are being read from local filepath, but pyspark job is enabled with required jars for working with S3/ Hadoop filesystems and output file generated would be put into `./output` folder. 
 
 _facing some issues to deploy the spark application to cluster using Airflow SparkSubmitOperator, hence using Bash Operator with spark-submit for deploying the application to run in spark-cluster_.
 
