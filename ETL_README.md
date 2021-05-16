@@ -24,7 +24,7 @@ _facing some issues to deploy the spark application to cluster using Airflow Spa
   - flower for monitoring celery workers
 
 
-## Steps to lauch the components and triggering Airflow DAG for data processing :
+## Steps to launch the components and triggering Airflow DAG for data processing :
   
   Clone repo and build images running below command
   
