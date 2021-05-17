@@ -1,0 +1,158 @@
+version: "3.6"
+
+volumes:
+  shared-workspace:
+    name: "hadoop-distributed-file-system"
+    driver: local
+
+
+services:
+    redis:
+        image: 'redis:5.0.5'
+        command: redis-server --requirepass redispass
+
+    postgres:
+        image: postgres:9.6
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+
+    webserver:
+        image: airflow-base
+        container_name: airflow-webserver
+        restart: always
+        depends_on:
+            - postgres
+            - redis
+        environment:
+            - LOAD_EX=n
+            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - EXECUTOR=Celery
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - REDIS_PASSWORD=redispass
+        volumes:
+            - ./mnt/airflow/dags:/usr/local/airflow/dags
+            - ./mnt/airflow/airflow.cfg:/usr/local/airflow/airflow.cfg
+            - ./data:/usr/local/airflow/data
+            # Uncomment to include custom plugins
+            # - ./plugins:/usr/local/airflow/plugins
+        ports:
+            - "8085:8080"
+        command: webserver
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+
+    flower:
+        image: airflow-base
+        container_name: celery-flower
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            - EXECUTOR=Celery
+            - REDIS_PASSWORD=redispass
+        ports:
+            - "5555:5555"
+        command: flower
+
+    scheduler:
+        image: airflow-base
+        container_name: airflow-scheduler
+        restart: always
+        depends_on:
+            - webserver
+        volumes:
+            - ./mnt/airflow/dags:/usr/local/airflow/dags
+            - ./mnt/airflow/airflow.cfg:/usr/local/airflow/airflow.cfg
+            - ./data:/usr/local/airflow/data           
+        # Uncomment to include custom plugins
+            # - ./plugins:/usr/local/airflow/plugins
+        environment:
+            - LOAD_EX=n
+            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - EXECUTOR=Celery
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - REDIS_PASSWORD=redispass
+        command: scheduler
+
+    worker:
+        image: airflow-base
+        container_name: celery-worker
+        restart: always
+        depends_on:
+            - scheduler
+            - spark-master
+            - spark-worker-1
+        volumes:
+            - ./mnt/airflow/dags:/usr/local/airflow/dags
+            - ./mnt/airflow/airflow.cfg:/usr/local/airflow/airflow.cfg
+            - ./data:/usr/local/airflow/data
+            - ./mnt/scripts:/usr/local/airflow/scripts
+            # Uncomment to include custom plugins
+            # - ./plugins:/usr/local/airflow/plugins
+        environment:
+            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - EXECUTOR=Celery
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - REDIS_PASSWORD=redispass
+        command: worker
+
+
+    ################################################################################
+    ## Spark cluster 
+    ################################################################################
+    ## spark master container
+    spark-master:
+        image: spark-master
+        container_name: spark-master
+        ports:
+          - 8080:8080
+          - 7077:7077
+          - 4043:4040
+        volumes:
+          - ./data:/usr/local/airflow/data
+          - ./mnt/scripts:/usr/local/airflow/scripts
+          - ./output:/opt/output
+  
+    ## spark worker container
+    spark-worker-1:
+        image: spark-worker
+        container_name: spark-worker-1
+        environment:
+          - SPARK_WORKER_CORES=1
+          #- SPARK_WORKER_MEMORY=512m
+        ports:
+          - 8081:8081
+        volumes:
+          - ./data:/usr/local/airflow/data
+          - ./mnt/scripts:/usr/local/airflow/scripts
+          - ./output:/opt/output
+        depends_on:
+            - spark-master
+
+    ## spark worker container
+    spark-worker-2:
+        image: spark-worker
+        container_name: spark-worker-2
+        environment:
+          - SPARK_WORKER_CORES=1
+          #- SPARK_WORKER_MEMORY=512m
+        ports:
+          - 8082:8081
+        volumes:
+          - ./data:/usr/local/airflow/data
+          - ./mnt/scripts:/usr/local/airflow/scripts
+          - ./output:/opt/output
+        depends_on:
+            - spark-master
+
