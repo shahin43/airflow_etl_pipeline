@@ -24,6 +24,6 @@ And then, docker-compose for spinning up containers
 
 
 Once containers are up Airflow, Flower and Spark cluster can be accessed as below from host machine as below :   
-  - Airflow enabled with celery executor can be accessed at - http://localhost:8085/
-  - Flower dashboard for celery workers can be accessed at - http://localhost:5555/
-  - Spark cluster UI can be accessed at - http://localhost:8080/
+  - Airflow enabled with celery executor, access using - http://localhost:8085/
+  - Flower dashboard for celery workers, access using - http://localhost:5555/
+  - Spark cluster UI, access using - http://localhost:8080/
